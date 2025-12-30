@@ -9,10 +9,12 @@ from typing import List, Dict, TypedDict
 from langgraph.graph import END, StateGraph
 from langchain_core.runnables import RunnableConfig
 from langchain_core.callbacks import dispatch_custom_event
+from loguru import logger
 from config.config import cfg, PROJECT_ROOT
 from agents.data_analysis_agent import DataAnalysisAgent, DataAnalysisAgentConfig, DataAnalysisAgentInput
 from agents.research_agent import ResearchAgent, ResearchAgentConfig, ResearchAgentInput
 from utils.market_manager import GLOBAL_MARKET_MANAGER
+from utils.exceptions import SignalParseError, AgentError
 
 # 统一的状态定义
 class CompanyState(TypedDict):
@@ -272,12 +274,16 @@ class SimpleTradeCompany:
                     signal = self._parse_single_signal_block(signal_block, thinking)
                     if signal:
                         signals.append(signal)
+                except (AttributeError, KeyError, ValueError) as e:
+                    logger.warning(f"Error parsing individual signal: {e}", exc_info=True)
+                    continue
                 except Exception as e:
-                    print(f"Error parsing individual signal: {e}")
+                    logger.error(f"Unexpected error parsing individual signal: {e}", exc_info=True)
                     continue
         
-        except Exception as e:
-            print(f"Error parsing multiple results: {e}")
+        except (AttributeError, re.error) as e:
+            logger.error(f"Error parsing signal blocks from output: {e}", exc_info=True)
+            raise SignalParseError(f"Failed to parse signal blocks: {e}") from e
         
         return signals
 
@@ -298,12 +304,14 @@ class SimpleTradeCompany:
                 evidence_description = item.split("</evidence>")[0].strip()
                 try:
                     evidence_time = re.search(r"<time>(.*?)</time>", item, flags=re.DOTALL).group(1).strip()
-                except:
+                except (AttributeError, IndexError):
                     evidence_time = "N/A"
+                    logger.debug("Evidence time not found, using default")
                 try:
                     evidence_from_source = re.search(r"<from_source>(.*?)</from_source>", item, flags=re.DOTALL).group(1).strip()
-                except:
+                except (AttributeError, IndexError):
                     evidence_from_source = "N/A"
+                    logger.debug("Evidence source not found, using default")
                     
                 evidence_list.append({
                     "description": evidence_description,
@@ -332,8 +340,14 @@ class SimpleTradeCompany:
                 "limitations": limitations,
                 "probability": probability,
             }
+        except (AttributeError, KeyError) as e:
+            logger.warning(f"Missing required field in signal block: {e}")
+            return None
+        except re.error as e:
+            logger.error(f"Regex error parsing signal block: {e}", exc_info=True)
+            return None
         except Exception as e:
-            print(f"Error parsing single signal block: {e}")
+            logger.error(f"Unexpected error parsing single signal block: {e}", exc_info=True)
             return None
 
     # LangGraph工作流创建

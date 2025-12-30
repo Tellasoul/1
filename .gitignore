@@ -235,3 +235,19 @@ test*
 *copy*
 *tmp*
 *_cache
+
+# Environment variables (additional)
+.env.local
+.env.*.local
+
+# API keys and secrets
+*_key.txt
+*_token.txt
+secrets/
+
+# New cache directories
+utils/cache/
+
+# Results and outputs
+results/
+outputs/

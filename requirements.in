@@ -1,0 +1,39 @@
+# ContestTrade Dependencies
+# 使用 pip-compile 生成锁定版本的 requirements.txt
+# 命令: pip-compile requirements.in -o requirements.txt
+
+# 核心依赖
+tqdm>=4.66.0
+requests>=2.31.0
+matplotlib>=3.8.0
+pandas>=2.1.0
+PyYAML>=6.0.0
+
+# 数据源
+tushare>=1.4.0
+akshare>=1.12.0
+finnhub-python>=2.4.0
+
+# LLM和AI
+openai>=1.0.0
+tiktoken>=0.5.0
+langgraph>=0.0.40
+
+# 日志
+loguru>=0.7.0
+
+# CLI和UI
+typer>=0.9.0
+questionary>=2.0.0
+prompt_toolkit>=3.0.43  # 更新到最新稳定版
+rich>=13.0.0
+tabulate>=0.9.0
+
+# 数据验证
+pydantic>=2.0.0
+
+# 网页抓取
+crawl4ai>=0.2.0
+
+# 机器学习
+lightgbm>=4.1.0
